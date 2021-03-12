@@ -62,31 +62,31 @@ GenerateOptions _generateOption(List<String> args) {
   return generateOptions;
 }
 
-ArgParser _generateArgParser(GenerateOptions generateOptions) {
+ArgParser _generateArgParser(GenerateOptions? generateOptions) {
   final parser = ArgParser()
     ..addOption('source-dir',
         abbr: 'S',
         defaultsTo: 'resources/langs',
-        callback: (x) => x is String ? generateOptions.sourceDir = x : null,
+        callback: (x) => x is String ? generateOptions?.sourceDir = x : null,
         help: 'Folder containing localization files')
     ..addOption('source-file',
         abbr: 's',
-        callback: (x) => x is String ? generateOptions.sourceFile = x : null,
+        callback: (x) => x is String ? generateOptions?.sourceFile = x : null,
         help: 'File to use for localization')
     ..addOption('output-dir',
         abbr: 'O',
         defaultsTo: 'lib/generated',
-        callback: (x) => x is String ? generateOptions.outputDir = x : null,
+        callback: (x) => x is String ? generateOptions?.outputDir = x : null,
         help: 'Output folder stores for the generated file')
     ..addOption('output-file',
         abbr: 'o',
         defaultsTo: 'codegen_loader.g.dart',
-        callback: (x) => x is String ? generateOptions.outputFile = x : null,
+        callback: (x) => x is String ? generateOptions?.outputFile = x : null,
         help: 'Output file name')
     ..addOption('format',
         abbr: 'f',
         defaultsTo: 'json',
-        callback: (x) => x is String ? generateOptions.format = x : null,
+        callback: (x) => x is String ? generateOptions?.format = x : null,
         help: 'Support json or keys formats',
         allowed: ['json', 'keys']);
 
@@ -94,12 +94,12 @@ ArgParser _generateArgParser(GenerateOptions generateOptions) {
 }
 
 class GenerateOptions {
-  String sourceDir;
-  String sourceFile;
-  String templateLocale;
-  String outputDir;
-  String outputFile;
-  String format;
+  late String sourceDir;
+  String? sourceFile;
+  String? templateLocale;
+  late String outputDir;
+  String? outputFile;
+  late String format;
 
   @override
   String toString() {
@@ -144,9 +144,7 @@ Future<void> handleLangFiles(GenerateOptions options) async {
 Future<List<FileSystemEntity>> dirContents(Directory dir) {
   final files = <FileSystemEntity>[];
   final completer = Completer<List<FileSystemEntity>>();
-  dir
-      .list(recursive: false)
-      .listen(files.add, onDone: () => completer.complete(files));
+  dir.list().listen(files.add, onDone: () => completer.complete(files));
   return completer.future;
 }
 
@@ -157,14 +155,14 @@ void generateFile(
     generatedFile.createSync(recursive: true);
   }
 
-  String classBuilder;
+  String? classBuilder;
   switch (format) {
     case 'json':
       classBuilder = '$_gFilePrefix${_writeJson(files)}}';
       break;
     case 'keys':
       final fileData = File(files.last.path).readAsStringSync();
-      if (fileData?.isNotEmpty ?? false) {
+      if (fileData.isNotEmpty) {
         classBuilder =
             "$_keysFilePrefix${'${_resolve(json.decode(fileData))}}'}";
       }
@@ -179,7 +177,7 @@ void generateFile(
   }
 }
 
-String _resolve(dynamic translations, [String accKey]) {
+String _resolve(dynamic translations, [String? accKey]) {
   String capitalize(String text) =>
       '${text[0].toUpperCase()}${text.substring(1)}';
 

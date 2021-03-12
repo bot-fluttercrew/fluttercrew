@@ -2,9 +2,10 @@ import 'dart:developer';
 
 import 'package:logger/logger.dart';
 
+/// logger instance
 Logger customLogger(String name) {
   return Logger(
-    output: name != null ? _DevLogOutput(name) : null,
+    output: name.isNotEmpty ? _DevLogOutput(name) : null,
     level: Level.verbose,
     filter: DevelopmentFilter(),
     printer: PrettyPrinter(
