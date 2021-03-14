@@ -21,7 +21,7 @@ const _preservedKeywords = [
 String _gFilePrefix = '''
 // DO NOT EDIT. This is code generated with flutterCrew utils package. Sourced from package:easy_localization/generate.dart
 
-// ignore_for_file: prefer_single_quotes
+// ignore_for_file: public_member_api_docs, prefer_single_quotes, lines_longer_than_80_chars
 
 import 'dart:ui';
 
@@ -40,8 +40,9 @@ class CodegenLoader extends AssetLoader{
 String _keysFilePrefix = '''
 // DO NOT EDIT. This is code generated with flutterCrew utils package. Sourced from package:easy_localization/generate.dart
 
-abstract class TR {
-''';
+// ignore_for_file: public_member_api_docs, lines_longer_than_80_chars
+
+abstract class TR {''';
 
 Future<void> main(List<String> args) async {
   if (_isHelpCommand(args)) {
@@ -54,7 +55,8 @@ Future<void> main(List<String> args) async {
 bool _isHelpCommand(List<String> args) =>
     args.length == 1 && (args[0] == '--help' || args[0] == '-h');
 
-void _printHelperDisplay() => print(_generateArgParser(null).usage);
+void _printHelperDisplay() =>
+    print(_generateArgParser(GenerateOptions()).usage);
 
 GenerateOptions _generateOption(List<String> args) {
   final generateOptions = GenerateOptions();
@@ -62,31 +64,32 @@ GenerateOptions _generateOption(List<String> args) {
   return generateOptions;
 }
 
-ArgParser _generateArgParser(GenerateOptions? generateOptions) {
+ArgParser _generateArgParser(GenerateOptions generateOptions) {
   final parser = ArgParser()
     ..addOption('source-dir',
         abbr: 'S',
         defaultsTo: 'resources/langs',
-        callback: (x) => x is String ? generateOptions?.sourceDir = x : null,
+        callback: (x) => x is String ? generateOptions.sourceDir = x : null,
         help: 'Folder containing localization files')
     ..addOption('source-file',
         abbr: 's',
-        callback: (x) => x is String ? generateOptions?.sourceFile = x : null,
+        callback: (x) => x is String ? generateOptions.sourceFile = x : null,
         help: 'File to use for localization')
     ..addOption('output-dir',
         abbr: 'O',
         defaultsTo: 'lib/generated',
-        callback: (x) => x is String ? generateOptions?.outputDir = x : null,
+        callback: (x) => x is String ? generateOptions.outputDir = x : null,
         help: 'Output folder stores for the generated file')
     ..addOption('output-file',
         abbr: 'o',
         defaultsTo: 'codegen_loader.g.dart',
-        callback: (x) => x is String ? generateOptions?.outputFile = x : null,
+        callback: (x) =>
+            x is String ? generateOptions.outputFile = path.basename(x) : null,
         help: 'Output file name')
     ..addOption('format',
         abbr: 'f',
         defaultsTo: 'json',
-        callback: (x) => x is String ? generateOptions?.format = x : null,
+        callback: (x) => x is String ? generateOptions.format = x : null,
         help: 'Support json or keys formats',
         allowed: ['json', 'keys']);
 
@@ -158,13 +161,12 @@ void generateFile(
   String? classBuilder;
   switch (format) {
     case 'json':
-      classBuilder = '$_gFilePrefix${_writeJson(files)}}';
+      classBuilder = '$_gFilePrefix${_writeJson(files)}}\n';
       break;
     case 'keys':
       final fileData = File(files.last.path).readAsStringSync();
       if (fileData.isNotEmpty) {
-        classBuilder =
-            "$_keysFilePrefix${'${_resolve(json.decode(fileData))}}'}";
+        classBuilder = '$_keysFilePrefix${_resolve(json.decode(fileData))}}\n';
       }
       break;
     default:
@@ -177,43 +179,40 @@ void generateFile(
   }
 }
 
-String _resolve(dynamic translations, [String? accKey]) {
+String _resolve(Map<String, dynamic> translations, [String? accKey]) {
   String capitalize(String text) =>
       '${text[0].toUpperCase()}${text.substring(1)}';
 
   final fileContent = StringBuffer();
+  final sortedKeys = translations.keys.toList();
+  for (final key in sortedKeys) {
+    final keyItem = translations[key];
+    if (keyItem is Map<String, dynamic>) {
+      final text = _resolve(
+        translations[key],
+        accKey != null ? '$accKey.$key' : key,
+      );
 
-  if (translations is Map<String, dynamic>) {
-    final sortedKeys = translations.keys.toList();
-    for (final key in sortedKeys) {
-      final keyItem = translations[key];
-      if (keyItem is Map<String, dynamic>) {
-        var nextAccKey = key;
-        if (accKey != null) {
-          nextAccKey = '$accKey.$key';
-        }
+      fileContent.write(text.startsWith('\n') ? text : '\n$text');
+    }
 
-        fileContent.write(_resolve(translations[key], nextAccKey));
-      }
+    if (!_preservedKeywords.contains(key)) {
+      final keyWords = key.split('_');
+      if (accKey != null) {
+        final newKey = keyWords.map(capitalize).join();
+        final accKeyWords = [
+          for (final key in accKey.split('.')) ...key.split('_')
+        ];
 
-      if (!_preservedKeywords.contains(key)) {
-        if (accKey != null) {
-          final keyWords = key.split('_');
-          final newKey = keyWords.map(capitalize).join();
+        final newAccKey =
+            accKeyWords.first + accKeyWords.sublist(1).map(capitalize).join();
 
-          final accKeyWords = [
-            for (final key in accKey.split('.')) ...key.split('_')
-          ];
-          final newAccKey =
-              accKeyWords.first + accKeyWords.sublist(1).map(capitalize).join();
-          fileContent.writeln(
-              """  static const String $newAccKey$newKey = '$accKey.$key';""");
-        } else {
-          final keyWords = key.split('_');
-          final newKey =
-              keyWords.first + keyWords.sublist(1).map(capitalize).join();
-          fileContent.writeln("  static const String $newKey = '$key';");
-        }
+        fileContent.writeln(
+            """\tstatic const String $newAccKey$newKey = '$accKey.$key';""");
+      } else {
+        final newKey =
+            keyWords.first + keyWords.sublist(1).map(capitalize).join();
+        fileContent.writeln("\tstatic const String $newKey = '$key';");
       }
     }
   }

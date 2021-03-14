@@ -83,11 +83,10 @@ String _convertToStringWithDashes(String enumItemString) {
 
   var newItem = enumItemString;
   for (final capitalLetter in capitalLetters) {
-    newItem = enumItemString.replaceRange(
-      capitalLetter.start,
-      capitalLetter.end,
-      '_${capitalLetter.group(0)!.toLowerCase()}',
-    );
+    final letter = capitalLetter.group(0);
+    if (letter != null) {
+      newItem = newItem.replaceFirst(letter, '_${letter.toLowerCase()}');
+    }
   }
   return newItem;
 }

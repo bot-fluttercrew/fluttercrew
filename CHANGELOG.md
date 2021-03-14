@@ -41,3 +41,12 @@
 ## [0.1.1] - TODO: null safety.
 
 * Fixed bugs.
+
+## [0.1.2] - TODO: Update localization generation.
+
+* Updated localization generation.
+
+## [0.1.2+1] - TODO: Fixed EnumToString bug.
+
+* Fixed bug with dashes.
+
