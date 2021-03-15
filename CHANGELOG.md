@@ -50,3 +50,7 @@
 
 * Fixed bug with dashes.
 
+## [0.1.3] - TODO: Refactor EnumToString.
+
+* Refactored EnumToString.
+

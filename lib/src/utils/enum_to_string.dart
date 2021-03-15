@@ -1,92 +1,105 @@
 library fluttercrew.enum_to_string;
 
-/// Class to convert enums
-class EnumToString {
-  static bool _isEnumItem(enumItem) {
-    final splitEnum = enumItem.toString().split('.');
-    return splitEnum.length > 1 &&
-        splitEnum[0] == enumItem.runtimeType.toString();
-  }
+import 'string_with_underscores.dart';
 
-  /// Convert an enum to a string
-  ///
-  /// Pass in the enum value, so TestEnum.valueOne into [enumItem]
-  /// It will return the striped off value so "valueOne".
-  ///
-  /// If you pass in the option [camelCase]=true it will convert it to words
-  /// So TestEnum.valueOne will become Value One
-  static String convertToString<T extends Object>(T enumItem,
-      {bool camelCase = false}) {
-    assert(
-        _isEnumItem(enumItem),
-        '$enumItem of type ${enumItem.runtimeType.toString()} '
-        'is not an enum item');
-    final _tmp = enumItem.toString().split('.')[1];
-    return camelCase ? _tmp : _convertToStringWithDashes(_tmp);
-  }
+/// Convert [enum] object to string
+///
+/// Pass in the not nullable [enum] object
+/// and return the part after the dot.
+///
+/// By default this will convert [enumItem] to string
+/// [withUnderscores] so `TestEnum.valueOne` will become `value_one`.
+///
+/// If [withUnderscores] is `false` this will leave the result of
+/// `TestEnum.valueOne` equal to `valueOne`, as well as
+/// `TestEnum.value_one` equal to `value_one`.
+///
+/// ```dart
+/// enum TestEnum { valueOneAndTwo }
+/// final eNum = enumToString(TestEnum.valueOneAndTwo);
+/// eNum == 'value_one_and_two'; // true
+///
+/// final eNum = enumToString(TestEnum.valueOneAndTwo, camelCase = true);
+/// eNum == 'valueOneAndTwo'; // true
+/// ```
+String enumToString<T extends Object>(T enumItem,
+    {bool withUnderscores = true}) {
+  final splitEnum = enumItem.toString().split('.');
+  final enumType = enumItem.runtimeType.toString();
 
-  /// Given a string, find and return its matching enum value
-  ///
-  /// You need to pass in the values of the enum object. So TestEnum.values
-  /// in the first argument. The matching value is the second argument.
-  ///
-  /// Example ```
-  /// final result = EnumToString.fromString(TestEnum.values, "valueOne")
-  /// result == TestEnum.valueOne //true
-  ///
-  static T fromString<T extends Object>(List<T> enumValues, String value) {
-    // try with camel case and without camel case
-    return enumValues.singleWhere((enumItem) =>
-        (EnumToString.convertToString(enumItem).toLowerCase() ==
-            value.toLowerCase()) ||
-        (EnumToString.convertToString(enumItem, camelCase: true)
-                .toLowerCase() ==
-            value.toLowerCase()));
-  }
+  assert(splitEnum.length == 2 && splitEnum.first == enumType,
+      '$enumItem of type $enumType is not a valid enum item');
 
-  /// Get the index of the enum value
-  ///
-  /// Pass in the enum values to argument one, so TestEnum.values
-  /// Pass in the matching string to argument 2, so "valueOne"
-  ///
-  /// Eg. ```
-  /// final index = EnumToString.indexOf(TestEnum.values, "valueOne")
-  /// index == 0 //true
-  static int indexOf<T extends Object>(List<T> enumValues, String value) =>
-      enumValues.indexOf(fromString<T>(enumValues, value));
-
-  /// get enums to list
-  static List<String> toList<T extends Object>(List<T> enumValues,
-      {bool camelCase = false}) {
-    final _enumList = enumValues
-        .map((t) => EnumToString.convertToString(t, camelCase: camelCase))
-        .toList();
-    return _enumList;
-  }
-
-  /// Get a list of enums given a list of strings.
-  /// Basically just EnumToString.fromString, but using lists
-  ///
-  /// Returns null for items that are not found.
-  ///
-  /// As with fromString it is not case sensitive
-  ///
-  /// Eg. EnumToString.fromList(TestEnum.values, ["valueOne", "value2"]
-  static List<T> fromList<T extends Object>(
-      List<T> enumValues, List<String> valueList) {
-    return List<T>.from(valueList.map((item) => fromString(enumValues, item)));
-  }
+  return withUnderscores ? splitEnum.last.withUnderscores() : splitEnum.last;
 }
 
-String _convertToStringWithDashes(String enumItemString) {
-  final capitalLetters = RegExp('[A-Z]+').allMatches(enumItemString);
+/// Given a string, find and return its matching [enum] value
+///
+/// This will try to match both strings in
+/// camelCase and with underscores.
+///
+/// This is also case sensitive.
+///
+/// ```dart
+/// enum TestEnum { valueOne, valueTwo }
+/// final eNum = enumFromString(TestEnum.values, 'valueOne');
+/// eNum == TestEnum.valueOne; // true
+/// ```
+T enumFromString<T extends Object>(Iterable<T> enumValues, String value) {
+  return enumValues.singleWhere((enumItem) {
+    final eNum = enumToString(enumItem, withUnderscores: false);
+    return eNum == value || eNum.withUnderscores() == value;
+  });
+}
 
-  var newItem = enumItemString;
-  for (final capitalLetter in capitalLetters) {
-    final letter = capitalLetter.group(0);
-    if (letter != null) {
-      newItem = newItem.replaceFirst(letter, '_${letter.toLowerCase()}');
-    }
-  }
-  return newItem;
+/// Convert [enum] to the list of strings
+///
+/// Pass in the [enum] values to the first argument,
+/// for example `TestEnum.values`
+///
+/// The [withUnderscores] parameter acts accordingly to
+/// [enumToString] implementation.
+///
+/// ```dart
+/// enum TestEnum { valueOne, valueTwo }
+/// final enumList = enumToList(TestEnum.values);
+/// enumList == ['value_one', 'value_two']; // true
+///
+/// final enumList = enumToList(TestEnum.values, camelCase: true);
+/// enumList == ['valueOne', 'valueTwo']; // true
+/// ```
+List<String> enumToList<T extends Object>(Iterable<T> enumValues,
+    {bool withUnderscores = true}) {
+  return enumValues
+      .map((t) => enumToString(t, withUnderscores: withUnderscores))
+      .toList();
+}
+
+/// Get a list of [enum] values from a list of strings
+///
+/// If some value from the [enum] object is not
+/// in the [stringValues], it won't be returned.
+///
+/// If some value appends more than once,
+/// it will be returned as many times as
+/// it appends in [stringValues].
+///
+/// ```dart
+/// enum TestEnum { valueOne, valueTwo }
+///
+/// final enumList = enumFromList(
+///   TestEnum.values,
+///   ['valueOne', 'value2'],
+/// );
+/// enumList == [TestEnum.valueOne]; // true
+///
+/// final enumList = enumFromList(
+///   TestEnum.values,
+///   ['value_two', 'valueTwo'],
+/// );
+/// enumList == [TestEnum.valueTwo, TestEnum.valueTwo]; // true
+/// ```
+List<T> enumFromList<T extends Object>(
+    Iterable<T> enumValues, Iterable<String> stringValues) {
+  return stringValues.map((item) => enumFromString(enumValues, item)).toList();
 }
