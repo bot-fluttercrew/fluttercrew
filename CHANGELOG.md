@@ -54,3 +54,6 @@
 
 * Refactored EnumToString.
 
+## [0.1.3+1]
+
+- Migrated from the deprecated connectivity plugin to connectivity_plus.
